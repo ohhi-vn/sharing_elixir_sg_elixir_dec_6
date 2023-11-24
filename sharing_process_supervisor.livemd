@@ -1,0 +1,209 @@
+# Process monitoring & Supervisor in Elixir
+
+## Process - What is the process?
+
+Process just is an isolated island(run a flow code with a owner heap) in Elixir world. Process run & managed by owner scheduler on ErlVM. It's like green thread/lightweight thread in other languages.
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## some common call fow for process
+
+Some flow of process.
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+stateDiagram-v2
+  [*] --> init
+  init --> do_job
+  do_job --> finish
+  finish --> [*]
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+stateDiagram-v2
+  [*] --> init
+  init --> loop
+  loop --> loop
+  loop --> finish
+  finish --> [*]
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+Process simple is a chain of functions(or loop function)
+
+<!-- livebook:{"break_markdown":true} -->
+
+Define module for example.
+
+```elixir
+defmodule Hello do
+  # simple
+  def print(msg) do
+    IO.puts("#{inspect(self())}, #{msg}")
+  end
+
+  # loop
+  def loop(n) when is_integer(n) and n > 0 do
+    IO.puts("#{inspect(self())}, n = #{n}")
+
+    # loop again in here
+    loop(n - 1)
+  end
+
+  # exit loop condition
+  def loop(_n) do
+    IO.puts("#{inspect(self())}, exit.")
+  end
+
+  # state 
+  def state(3 = n) do
+    IO.puts("#{inspect(self())}, state: 3")
+
+    state(n - 1)
+  end
+
+  def state(2 = n) do
+    IO.puts("#{inspect(self())}, state: 2")
+
+    state(n - 1)
+  end
+
+  def state(1) do
+    IO.puts("#{inspect(self())}, state: 1 & exit")
+  end
+
+  def state(n) do
+    IO.puts("#{inspect(self())}, state: #{inspect(n)}")
+  end
+end
+```
+
+Example first call flow
+
+```elixir
+a = fn msg ->
+  Hello.print(msg)
+end
+
+b = fn ->
+  a.("Xin chào!")
+end
+
+# spawn(Hello, :print, ["hello by spawn/3"])
+spawn(b)
+```
+
+Example for second flow
+
+```elixir
+spawn(fn -> Hello.state(5) end)
+```
+
+Example for third flow
+
+```elixir
+spawn(fn -> Hello.loop(5) end)
+```
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Communite between processes
+
+How to communicate between processes?
+
+Use `send` for sending a msg to other process.
+
+Use `receive` for waiting (or get from message queue) a message from other processes
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+sequenceDiagram;
+  process_1->>process_2: send a msg to start request
+  process_2->>process_1: respond request
+  process_2->>process_1: new event
+  process_1->>process_1: send to myself
+```
+
+## How to monitor process
+
+How to manage process?
+
+How to know when process exit or process die?
+
+Or how to restart process if it's died?
+
+<!-- livebook:{"branch_parent_index":3} -->
+
+## Link between proceses
+
+Build on top of Erlang, Elixir support create a link between processes.
+
+But what is the link? That a solid connection between two processes if a process is die then another process will die.
+
+Use by start process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after called spawn.
+
+The idea in here, you can fail fast or shutdown all processes asap like a domino effect(chain reaction). Think you have thousands processes then want to fail together or exit asap.
+
+```elixir
+defmodule LinkDemo do
+  def loop do
+    IO.puts("#{inspect(self())}, I'm fine")
+    Process.sleep(1000)
+
+    loop()
+  end
+
+  def loop(5) do
+    IO.puts("#{inspect(self())}, I will die now!")
+    raise "I'm out!"
+  end
+
+  def loop(n) do
+    IO.puts("#{inspect(self())}, I'm counting => #{n}")
+    Process.sleep(1000)
+
+    loop(n + 1)
+  end
+
+  def crash_soon do
+    pid = spawn_link(&loop/0)
+
+    IO.puts("spawn child process done => #{inspect(pid)}")
+    loop(1)
+  end
+
+  def create_child_processes do
+    pid = spawn(&crash_soon/0)
+
+    IO.puts("spawn first child done => #{inspect(pid)}")
+    pid
+  end
+end
+```
+
+```elixir
+first_pid = LinkDemo.create_child_processes()
+Process.sleep(100)
+Process.alive?(first_pid)
+```
+
+```elixir
+Process.alive?(first_pid)
+```
+
+<!-- livebook:{"branch_parent_index":3} -->
+
+## Monitor a process
+
+In another hand, you want to know how process died or want to restart process if it die.
+
+You can use monitor to receive a message when a monitored process die.
