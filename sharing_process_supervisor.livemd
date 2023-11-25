@@ -151,54 +151,112 @@ But what is the link? That a solid connection between two processes if a process
 
 Use by start process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after called spawn.
 
+For unlink process we can use `Process.unlink/1`.
+
+For get info about link of process we can use `Process.info/2` with option `:links`.
+
 The idea in here, you can fail fast or shutdown all processes asap like a domino effect(chain reaction). Think you have thousands processes then want to fail together or exit asap.
 
 ```elixir
-defmodule LinkDemo do
-  def loop do
-    IO.puts("#{inspect(self())}, I'm fine")
-    Process.sleep(1000)
+defmodule LetsCrash do
+  def event_loop do
+    receive do
+      :crash ->
+        raise "#{inspect(self())}, I'm out"
 
-    loop()
+      :shutdown ->
+        IO.puts("#{inspect(self())}, I'm shutting down...")
+
+      {from, :ping} ->
+        IO.puts("#{inspect(self())}, I got a ping msg from #{inspect(from)}")
+        send(from, :pong)
+        event_loop()
+
+      msg ->
+        IO.puts("#{inspect(self())}, Unknown msg: #{inspect(msg)}")
+        event_loop()
+    after
+      1500 ->
+        IO.puts("#{inspect(self())}, I'm fine")
+        event_loop()
+    end
   end
 
-  def loop(5) do
-    IO.puts("#{inspect(self())}, I will die now!")
-    raise "I'm out!"
+  def get_one_msg() do
+    receive do
+      msg ->
+        IO.puts("#{inspect(self())}, got a msg: #{inspect(msg)}")
+    end
   end
 
-  def loop(n) do
-    IO.puts("#{inspect(self())}, I'm counting => #{n}")
-    Process.sleep(1000)
+  def create_son do
+    pid = spawn_link(&event_loop/0)
+    Process.register(pid, :son)
 
-    loop(n + 1)
+    IO.puts("spawn son process done => #{inspect(pid)}")
   end
 
-  def crash_soon do
-    pid = spawn_link(&loop/0)
+  def init do
+    create_son()
 
-    IO.puts("spawn child process done => #{inspect(pid)}")
-    loop(1)
+    event_loop()
   end
 
-  def create_child_processes do
-    pid = spawn(&crash_soon/0)
+  def create_parent do
+    pid = spawn(&init/0)
+    Process.register(pid, :parent)
+    IO.puts("spawn parent process done => #{inspect(pid)}")
 
-    IO.puts("spawn first child done => #{inspect(pid)}")
     pid
   end
 end
 ```
 
-```elixir
-first_pid = LinkDemo.create_child_processes()
-Process.sleep(100)
-Process.alive?(first_pid)
-```
+Let's create `:parent` & `:son` process
 
 ```elixir
-Process.alive?(first_pid)
+LetsCrash.create_parent()
 ```
+
+Let's check `:parent` & `:son` processes.
+
+```elixir
+case Process.whereis(:parent) do
+  nil ->
+    IO.puts("parent process is death")
+
+  pid ->
+    result = Process.alive?(pid)
+    IO.puts(" #{inspect(pid)} is alive? #{inspect(result)}")
+end
+
+case Process.whereis(:son) do
+  nil ->
+    IO.puts("son process is death")
+
+  pid ->
+    result = Process.alive?(pid)
+    IO.puts(" #{inspect(pid)} is alive? #{inspect(result)}")
+end
+```
+
+Get a test by send message to both processes
+
+```elixir
+send(:parent, {self(), :ping})
+LetsCrash.get_one_msg()
+
+send(:son, {self(), :ping})
+LetsCrash.get_one_msg()
+```
+
+Let's us crash a process and see what happen.
+
+```elixir
+send(:parent, :crash)
+```
+
+Let's check processes again.
 
 <!-- livebook:{"branch_parent_index":3} -->
 
@@ -207,3 +265,108 @@ Process.alive?(first_pid)
 In another hand, you want to know how process died or want to restart process if it die.
 
 You can use monitor to receive a message when a monitored process die.
+
+Some function for monitor process: `spawn_monitor/`, `spawn_monitor/3`, `Process.monitor/1`, `Process.spawn/2` & `Process.spawn/4` with option: `:monitor`
+
+For demonitor: `Process.demonitor/2`
+
+When monitored process is die other process will receive a message:
+
+`{:DOWN, #Reference<...>, :process, #PID<...>, reason}`
+
+```elixir
+defmodule MonitorProcess do
+  def event_loop do
+    receive do
+      :crash ->
+        raise "#{inspect(self())}, I'm out"
+
+      :shutdown ->
+        IO.puts("#{inspect(self())}, I'm shutting down...")
+
+      {from, :ping} ->
+        IO.puts("#{inspect(self())}, I got a ping msg from #{inspect(from)}")
+        send(from, :pong)
+        event_loop()
+
+      msg ->
+        IO.puts("#{inspect(self())}, Unknown msg: #{inspect(msg)}")
+        event_loop()
+    after
+      1500 ->
+        IO.puts("#{inspect(self())}, I'm fine")
+        event_loop()
+    end
+  end
+
+  def get_one_msg() do
+    receive do
+      msg ->
+        IO.puts("#{inspect(self())}, got a msg: #{inspect(msg)}")
+    end
+  end
+
+  def create_son do
+    # spawn with monitor
+    {pid, ref} = spawn_monitor(&event_loop/0)
+    Process.register(pid, :son_monitor)
+
+    IO.puts("spawn son process done => #{inspect(pid)}, ref: #{inspect(ref)}")
+  end
+
+  def init do
+    create_son()
+
+    event_loop()
+  end
+
+  def create_parent do
+    # normal spawn
+    pid = spawn(&init/0)
+    Process.register(pid, :parent_monitor)
+    IO.puts("spawn parent process done => #{inspect(pid)}")
+
+    pid
+  end
+end
+```
+
+```elixir
+MonitorProcess.create_parent()
+```
+
+```elixir
+case Process.whereis(:parent_monitor) do
+  nil ->
+    IO.puts("parent process is death")
+
+  pid ->
+    result = Process.alive?(pid)
+    IO.puts(" #{inspect(pid)} is alive? #{inspect(result)}")
+end
+
+case Process.whereis(:son_monitor) do
+  nil ->
+    IO.puts("son process is death")
+
+  pid ->
+    result = Process.alive?(pid)
+    IO.puts(" #{inspect(pid)} is alive? #{inspect(result)}")
+end
+```
+
+```elixir
+send(:parent_monitor, {self(), :ping})
+LetsCrash.get_one_msg()
+
+send(:son_monitor, {self(), :ping})
+LetsCrash.get_one_msg()
+```
+
+```elixir
+send(:son_monitor, :crash)
+```
+
+```elixir
+send(:parent_monitor, :crash)
+```
