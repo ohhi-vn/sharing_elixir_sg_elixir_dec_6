@@ -3,12 +3,13 @@ defmodule SimpleLoop do
     receive do
       :stop ->
         :ok
-
       :raise ->
         raise "raised by #{inspect(self())}"
-
       {from, :ping} ->
         send(from, :pong)
+        loop()
+      msg ->
+        IO.puts("#{inspect(self())}, Unknown msg: #{inspect(msg)}")
         loop()
     end
   end
