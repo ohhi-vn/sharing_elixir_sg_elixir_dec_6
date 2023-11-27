@@ -11,8 +11,28 @@ A behaviour module for implementing the server of a client-server relation.
       GenServer -.->|reply| A & B & C
       D -->|handle_cast -- noreply| GenServer
 ```
+Some Callbacks:
+
++ **init(init_arg)**: Invoked when the server is started. start_link/3 or start/3 will block until it returns.
++ **handle_call(request, from, state)**: Invoked to handle synchronous call/3 messages. call/3 will block until a reply is received (unless the call times out or nodes are disconnected).
++ **handle_cast(request, state)**: Invoked to handle asynchronous cast/2 messages.
++ **handle_info(msg, state)**: Invoked to handle all other messages.
 
 ## Supervisor
+
+A supervisor is a process which supervises other processes, which we refer to as child processes.
+
+<img src="files/supervisor.png" alt="image" width="700" height="300" />
+
+
+There are currently three different supervision strategies available to supervisors:
+
++ :one_for_one - Only restart the failed child process.
+
++ :one_for_all - Restart all child processes in the event of a failure.
+
++ :rest_for_one - Restart the failed process and any process started after it.
+
 
 ## References:
 * [GenServer](https://hexdocs.pm/elixir/main/GenServer.html)
