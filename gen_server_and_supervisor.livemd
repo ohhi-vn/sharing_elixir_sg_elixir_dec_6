@@ -1,0 +1,18 @@
+# Supervisor & OTP for an easy life.
+
+## gen_server
+
+A behaviour module for implementing the server of a client-server relation.
+
+```mermaid
+  graph BT
+      D(Client #4) ~~~ C(Client #3) ~~~ B(Client #2) ~~~ A(Client #1)
+      A & B & C -->|handle_call| GenServer
+      GenServer -.->|reply| A & B & C
+      D -->|handle_cast -- noreply| GenServer
+```
+
+## Supervisor
+
+## References:
+* [GenServer](https://hexdocs.pm/elixir/main/GenServer.html)
