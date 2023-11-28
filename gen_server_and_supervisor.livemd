@@ -28,11 +28,16 @@ A supervisor is a process which supervises other processes, which we refer to as
 There are currently three different supervision strategies available to supervisors:
 
 + :one_for_one - Only restart the failed child process.
-
 + :one_for_all - Restart all child processes in the event of a failure.
-
 + :rest_for_one - Restart the failed process and any process started after it.
 
+## PartitionSupervisor
+A supervisor that starts multiple partitions of the same child.
+
+Certain processes may become bottlenecks in large systems. If those processes can have their state trivially partitioned, in a way there is no dependency between them, then they can use the PartitionSupervisor to create multiple isolated and independent partitions.
 
 ## References:
 * [GenServer](https://hexdocs.pm/elixir/main/GenServer.html)
+* [Supervisor](https://hexdocs.pm/elixir/main/Supervisor.html)
+* [PartitionSupervisor](https://hexdocs.pm/elixir/main/PartitionSupervisor.html)
+* [Fix Process Bottlenecks with Partition Supervisor](https://blog.appsignal.com/2022/09/20/fix-process-bottlenecks-with-elixir-1-14s-partition-supervisor.html)
