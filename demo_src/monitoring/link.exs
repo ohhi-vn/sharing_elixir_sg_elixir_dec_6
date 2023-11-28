@@ -2,6 +2,7 @@ defmodule LetsCrash do
   def event_loop do
     receive do
       :crash ->
+        IO.puts("#{inspect(self())}, I will raise a error!")
         raise "#{inspect(self())}, I'm out"
 
       :shutdown ->
@@ -16,7 +17,7 @@ defmodule LetsCrash do
         IO.puts("#{inspect(self())}, Unknown msg: #{inspect(msg)}")
         event_loop()
     after
-      1500 ->
+      3000 ->
         IO.puts("#{inspect(self())}, I'm fine")
         event_loop()
     end
