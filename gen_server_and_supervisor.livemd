@@ -1,3 +1,5 @@
+<!-- livebook:{"file_entries":[{"name":"supervisor.png","type":"attachment"}]} -->
+
 # Supervisor & OTP for an easy life.
 
 ## gen_server
@@ -11,12 +13,13 @@ A behaviour module for implementing the server of a client-server relation.
       GenServer -.->|reply| A & B & C
       D -->|handle_cast -- noreply| GenServer
 ```
+
 Some Callbacks:
 
-+ **init(init_arg)**: Invoked when the server is started. start_link/3 or start/3 will block until it returns.
-+ **handle_call(request, from, state)**: Invoked to handle synchronous call/3 messages. call/3 will block until a reply is received (unless the call times out or nodes are disconnected).
-+ **handle_cast(request, state)**: Invoked to handle asynchronous cast/2 messages.
-+ **handle_info(msg, state)**: Invoked to handle all other messages.
+* **init(init_arg)**: Invoked when the server is started. start_link/3 or start/3 will block until it returns.
+* **handle_call(request, from, state)**: Invoked to handle synchronous call/3 messages. call/3 will block until a reply is received (unless the call times out or nodes are disconnected).
+* **handle_cast(request, state)**: Invoked to handle asynchronous cast/2 messages.
+* **handle_info(msg, state)**: Invoked to handle all other messages.
 
 ## Supervisor
 
@@ -24,19 +27,22 @@ A supervisor is a process which supervises other processes, which we refer to as
 
 <img src="files/supervisor.png" alt="image" width="700" height="300" />
 
-
 There are currently three different supervision strategies available to supervisors:
 
-+ :one_for_one - Only restart the failed child process.
-+ :one_for_all - Restart all child processes in the event of a failure.
-+ :rest_for_one - Restart the failed process and any process started after it.
+* :one_for_one - Only restart the failed child process.
+* :one_for_all - Restart all child processes in the event of a failure.
+* :rest_for_one - Restart the failed process and any process started after it.
 
 ## PartitionSupervisor
+
 A supervisor that starts multiple partitions of the same child.
 
 Certain processes may become bottlenecks in large systems. If those processes can have their state trivially partitioned, in a way there is no dependency between them, then they can use the PartitionSupervisor to create multiple isolated and independent partitions.
 
+## Demo
+
 ## References:
+
 * [GenServer](https://hexdocs.pm/elixir/main/GenServer.html)
 * [Supervisor](https://hexdocs.pm/elixir/main/Supervisor.html)
 * [PartitionSupervisor](https://hexdocs.pm/elixir/main/PartitionSupervisor.html)
