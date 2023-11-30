@@ -4,8 +4,6 @@
 
 Process just is an isolated island(run a flow code with a owner heap) in Elixir world. Process run & managed by owner scheduler on ErlVM. It's like green thread/lightweight thread in other languages.
 
-<!-- livebook:{"branch_parent_index":0} -->
-
 ## some common call fow for process
 
 Some flow of process.
@@ -183,19 +181,25 @@ This a common questions we have:
 
 This is very advantage features of Elixir (and this are benefits Elixir get from Erlang) and we will go through these.
 
+<!-- livebook:{"break_markdown":true} -->
+
+We can manually controll process by link/monitor feature in Elixir.
+
 ## Link between proceses
 
-Build on top of Erlang, Elixir support create a link between processes.
+Build on top of Erlang, Elixir support create a link between 2 processes.
 
-But what is the link? That a solid connection between two processes and if a process is die then another process will die.
+But what is the link? That a solid connection between two processes. If a process is die then another process will die.
 
-Use by start process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after called spawn.
+Use by start process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after spawned.
 
 For unlink process we can use `Process.unlink/1`.
 
 For get info about link of process we can use `Process.info/2` with option `:links`.
 
-The idea in here, you can fail fast or shutdown all processes asap like a domino effect(chain reaction). Think you have thousands processes then want to fail together or exit asap.
+You can have a chain of processes like process A link process B and process B link to process. Now we have a group linked processes A, B & C. If A is die then B & C will die.
+
+The main idea in here, you can fail fast or shutdown all processes asap & easy exit like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy exit .
 
 ```elixir
 defmodule LetsCrash do
@@ -308,15 +312,17 @@ Let's check processes again.
 
 ## Monitor a process
 
-In another hand, you want to know how process died or want to restart process if it die AND don't want process die follow other process.
+In another hand, you want to know how a process died or want to restart a process if it's died (AND don't want process die follow other process).
 
-You can use monitor feature to receive a message when a monitored process die.
+You can use monitor process feature for above reason.
+
+When a process A monitor process B, process A will receive a message if a process B is died.
 
 Some function for monitor process: `spawn_monitor/`, `spawn_monitor/3`, `Process.monitor/1`, `Process.spawn/2` & `Process.spawn/4` with option `:monitor`.
 
 For demonitor: `Process.demonitor/2`
 
-When monitored process is die other process will receive a message:
+Message's format:
 
 `{:DOWN, #Reference<...>, :process, #PID<...>, reason}`
 
@@ -448,7 +454,7 @@ send(:son_monitor, :shutdown)
 
 ## Trap process
 
-What is trap a process?
+What is a trap?
 
 That a way to avoid a linked process die follow other process.
 
@@ -520,7 +526,23 @@ IO.puts("#{inspect(pid)} is alive? =>  #{inspect(Process.alive?(pid))}")
 
 From link, monitor & trap_exit above we can build a own supervisor.
 
+For simple I make a supervisor by link process and `:trap_exit`.
+
 Idea the supervisor is a process with `:trap_exit` was set to `true` for receiving exit signal from children. All children will die if supervisor process was die.
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+sequenceDiagram
+    Sup->>Child: spawn_link
+    Child-->>Sup: msg Die!
+    Sup->>Child: spawn_link
+    Sup->>Child: Terminate
+```
+
+<!-- livebook:{"break_markdown":true} -->
 
 The simple supervisor:
 
