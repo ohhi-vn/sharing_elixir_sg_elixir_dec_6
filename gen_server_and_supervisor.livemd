@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"name":"supervisor.png","type":"attachment"}]} -->
+<!-- livebook:{"file_entries":[{"name":"demo.jpeg","type":"attachment"},{"name":"supervisor.png","type":"attachment"}]} -->
 
 # Supervisor & OTP for an easy life.
 
@@ -40,6 +40,8 @@ A supervisor that starts multiple partitions of the same child.
 Certain processes may become bottlenecks in large systems. If those processes can have their state trivially partitioned, in a way there is no dependency between them, then they can use the PartitionSupervisor to create multiple isolated and independent partitions.
 
 ## Demo
+
+<img src="files/demo.jpeg" alt="image" width="700" height="600" />
 
 ## References:
 
