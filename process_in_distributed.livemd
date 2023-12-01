@@ -1,0 +1,6 @@
+# Process in distributed & how we can save cost by use advantage of Elixir
+
+## Process in distributed computing
+
+Some of a noise for dev is deploy an system.
+Dev need to use Docker/K8s for
