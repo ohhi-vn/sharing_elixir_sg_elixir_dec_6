@@ -1,6 +1,161 @@
-# Process in distributed & how we can save cost by use advantage of Elixir
+<!-- livebook:{"file_entries":[{"name":"Elixir_app.png","type":"attachment"}]} -->
+
+# Elixir in distributed world
+
+## Distributed computing
+
+Until now, programming for distributed system is so hard.
+
+Erlang has a long history for this then Elixir developers can use that.
 
 ## Process in distributed computing
 
-Some of a noise for dev is deploy an system.
-Dev need to use Docker/K8s for
+We can easy spawn a process in a remote node.
+Local process can easy communicates with remote process on other node.
+
+In Elixir for spawn in remote node we can use functions like last LiveBook in `Node` module (spawn/spawn_link/spawn_monitor).
+
+The most functions from last introduce also have in Node module.
+That mean we can build very flexible system with highly automation.
+Yes, almost we have no border like other languages.
+
+## Push code to remote node
+
+Docker/K8s now is disturbing things for dev.
+Too many things need to care for dev.
+Another wall team need to break through (especially small company).
+
+We can clone a local module to a remote node by:
+
+* Erlang functions `:rpc.call`, `:rpc.multicall` with `:code.load_binary/3` function.
+* Elixir function ` Code.compile_quoted`.
+* Erlang `:erl_boot_server` module for diskless node.
+
+```elixir
+{mod, bin, file} = code:get_object_code(Mod),
+{_Replies, _} = rpc:multicall(Nodes, code, load_binary,
+                              [mod, file, bin])
+```
+
+The idea in here, you can start an empty node then push code later. Don't need to care about build or wrap an app.
+
+## Node monitoring
+
+We can monitor a remote node almost like monitor process.
+
+We can turn a none distributed node to a distributed node by `Node.start`.
+
+We can monitor a node by `Node.minitor/2`.
+
+For monitor node case, if a node die, other node will received a message `{:nodedown, node_name}`.
+
+## OTP way to deploy (& fault tolerance)
+
+### Elixir app just is an OTP app
+
+<!-- livebook:{"break_markdown":true} -->
+
+![](files/Elixir_app.png)
+
+<!-- livebook:{"break_markdown":true} -->
+
+OTP control application through application controller & distributed application controller.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Distributed application
+
+For distributed application in OTP, we need to declare it.
+
+example for a master application:
+
+```elixir
+# declare in Erlang. Example from official docs.
+[{kernel,
+  [{distributed, [{myapp, 5000, [cp1@cave, {cp2@cave, cp3@cave}]}]},
+   {sync_nodes_mandatory, [cp2@cave, cp3@cave]},
+   {sync_nodes_timeout, 5000}
+  ]
+ }
+].
+```
+
+### Failover & takeover
+
+<!-- livebook:{"break_markdown":true} -->
+
+Distributed applications have two state: Active, Stanby(backup).
+
+The Application's start phases type: normal, failover & takeover.
+
+Normal for start normally no fail.
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+flowchart LR
+   app_A <-- idle --> app_B <-- idle --> app_C
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+Failover: A backup app will replace a die application.
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+flowchart LR
+   app_A -- failover --> app_B <-- idle --> app_C
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+Takeover: A node wake up(restarted node) with high priority will take over other app.
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+flowchart LR
+   app_A -- takeover --> app_B <-- idle --> app_C
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+For more info please go to [Erlang OTP Design Principles](https://www.erlang.org/doc/design_principles/distributed_applications) & [LearnYouSomeErlang](https://learnyousomeerlang.com/distributed-otp-applications)
+
+## Third party for easy to work with distributed programming
+
+`:libcluster` for easy work with K8s.
+
+`:partisan` for performance.
+
+Raft (consensus algorithm) a implementation for Erlang [ra](https://github.com/rabbitmq/ra).
+
+## Idea for a fast & automation deployment
+
+### Look back to current way for deployment
+
+We have a team for code (Dev team), team for deploy (DevOps) and many layers for our products.
+Agile helps us so much for fast response to change but still a lot of bottleneck in CI/CD pipe.
+
+Some OSS are really not good. We go to trouble soon when we scale or upgrade our system. For my case (big data - SOC), I need spend time too much for tuning, optimizing & security.
+
+K8s & Docker are perfect for static type languages but not for dynamic type languages. Why?
+
+### The idea
+
+The idea in here we can build & deploy distributed system without complexity of other tool like K8s.
+
+Each node is Elixir node and start with minimul code (just info for connect, security) and can auto switch to a node with code we need.
+
+Node uses all hardware resource. Maybe we have some specific hardware for specific task like: cache(memory intensive), db(storage intensive), ML(GPU/AI-accelerator),... but for general nodes we can reuse like K8s.
+
+## How Elixir take advantage of Erlang to go further than other languages
+
+Now we have answer for this.
+
+### Thank you so much!

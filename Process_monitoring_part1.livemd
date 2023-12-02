@@ -199,7 +199,9 @@ For get info about link of process we can use `Process.info/2` with option `:lin
 
 You can have a chain of processes like process A link process B and process B link to process. Now we have a group linked processes A, B & C. If A is die then B & C will die.
 
-The main idea in here, you can fail fast or shutdown all processes asap & easy exit like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy exit .
+The main idea in here, you can fail fast or shutdown all processes asap & easy exit like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy exit.
+
+Note: If linked process is exit normally (:normal, :noproc) other process will not be killed.
 
 ```elixir
 defmodule LetsCrash do
