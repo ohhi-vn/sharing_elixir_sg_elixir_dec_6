@@ -4,7 +4,7 @@
 
 ## Distributed computing
 
-Until now, programming for distributed system is so hard.
+Until now, programming for distributed system is still so hard.
 
 Erlang has a long history for this then Elixir developers can use that.
 
@@ -125,6 +125,8 @@ flowchart LR
 
 <!-- livebook:{"break_markdown":true} -->
 
+Note: OTP's mechanism is fit for hardware failure not network slip t
+
 For more info please go to [Erlang OTP Design Principles](https://www.erlang.org/doc/design_principles/distributed_applications) & [LearnYouSomeErlang](https://learnyousomeerlang.com/distributed-otp-applications)
 
 ## Third party for easy to work with distributed programming
@@ -134,6 +136,28 @@ For more info please go to [Erlang OTP Design Principles](https://www.erlang.org
 `:partisan` for performance.
 
 Raft (consensus algorithm) a implementation for Erlang [ra](https://github.com/rabbitmq/ra).
+
+Current cluster model:
+
+<!-- livebook:{"break_markdown":true} -->
+
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph TD;
+  Leader-->Follower1;
+  Leader-->Follower2;
+  Leader-->Follower3;
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
+If Leader is die, Followers will vote new Leader.
+Currently, we have two famous algorithms that are Paxos(old cluster uses this. Ex:Zookeeper), and Raft(new clusters uses this, almost buildin Ex: Redpanda, components in K8s).
+
+<!-- livebook:{"break_markdown":true} -->
+
+I hope OTP app support this in the future.
 
 ## Idea for a fast & automation deployment
 
@@ -148,9 +172,9 @@ K8s & Docker are perfect for static type languages but not for dynamic type lang
 
 ### The idea
 
-The idea in here we can build & deploy distributed system without complexity of other tool like K8s.
+The idea in here we can build & deploy distributed system without complexity of other tool like K8s by using advantage of Elixir/Erlang (& dynamic type languages).
 
-Each node is Elixir node and start with minimul code (just info for connect, security) and can auto switch to a node with code we need.
+Each node is Elixir node and start with minimum code (just code for init state like: connect/join cluster, security) and can auto switch to a node with code we need.
 
 Node uses all hardware resource. Maybe we have some specific hardware for specific task like: cache(memory intensive), db(storage intensive), ML(GPU/AI-accelerator),... but for general nodes we can reuse like K8s.
 
