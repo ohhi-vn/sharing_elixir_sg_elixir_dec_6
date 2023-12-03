@@ -25,6 +25,8 @@ Some Callbacks:
 
 A supervisor is a process which supervises other processes, which we refer to as child processes.
 
+A supervisor is responsible for starting, stopping, and monitoring its child processes. The basic idea of a supervisor is that it is to keep its child processes alive by restarting them when necessary.
+
 <img src="files/supervisor.png" alt="image" width="700" height="300" />
 
 There are currently three different supervision strategies available to supervisors:
@@ -32,6 +34,13 @@ There are currently three different supervision strategies available to supervis
 * :one_for_one - Only restart the failed child process.
 * :one_for_all - Restart all child processes in the event of a failure.
 * :rest_for_one - Restart the failed process and any process started after it.
+
+## DynamicSupervisor
+
+A supervisor optimized to only start children dynamically.
+
+The Supervisor module was designed to handle mostly static children that are started in the given order when the supervisor starts.
+A DynamicSupervisor starts with no children. Instead, children are started on demand via start_child/2 and there is no ordering between children
 
 ## PartitionSupervisor
 
@@ -47,5 +56,6 @@ Certain processes may become bottlenecks in large systems. If those processes ca
 
 * [GenServer](https://hexdocs.pm/elixir/main/GenServer.html)
 * [Supervisor](https://hexdocs.pm/elixir/main/Supervisor.html)
+* [Supervisor Principles](https://www.erlang.org/doc/design_principles/sup_princ)
 * [PartitionSupervisor](https://hexdocs.pm/elixir/main/PartitionSupervisor.html)
 * [Fix Process Bottlenecks with Partition Supervisor](https://blog.appsignal.com/2022/09/20/fix-process-bottlenecks-with-elixir-1-14s-partition-supervisor.html)
