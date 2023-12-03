@@ -6,10 +6,6 @@ Process just is an isolated island(run a flow code with a owner heap) in Elixir 
 
 ## some common call fow for process
 
-Some flow of process.
-
-<!-- livebook:{"break_markdown":true} -->
-
 start process do a job then exit:
 
 <!-- livebook:{"break_markdown":true} -->
@@ -149,11 +145,13 @@ Process.sleep(100)
 
 How to communicate between processes? (or how to a process get data from other process)
 
-Don't like other languages Elixir can use global variables (but ETS table). A process in Elixir only can send or receive a message to/from other process.
+Don't like other languages Elixir cannot use global variables (but ETS table). A process in Elixir only can send or receive a message to/from other process.
 
 Use `send/2` function for sending a msg to other process.
 
 Use `receive do` for waiting (or get from message box if process has a message) a message from other processes
+
+Message are stored in Mailbox of process.
 
 <!-- livebook:{"break_markdown":true} -->
 
@@ -171,17 +169,13 @@ sequenceDiagram;
 
 This a common questions we have:
 
-* How to manage process?
+* How to control a process?
 
-* How to know when process exit or process die?
+* How to know when a process exit or process die?
 
-* How to restart process if it's died?
+* How to kill or restart(if process is died) a process?
 
-<!-- livebook:{"break_markdown":true} -->
-
-This is very advantage features of Elixir (and this are benefits Elixir get from Erlang) and we will go through these.
-
-<!-- livebook:{"break_markdown":true} -->
+Management/control are very advantage features of Elixir (benefits from Erlang) and we will go through these.
 
 We can manually controll process by link/monitor feature in Elixir.
 
@@ -191,7 +185,7 @@ Build on top of Erlang, Elixir support create a link between 2 processes.
 
 But what is the link? That a solid connection between two processes. If a process is die then another process will die.
 
-Use by start process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after spawned.
+Use by spawn process with function `spawn_link/1`, `spawn_link/3`, `Process.spawn/2` & `Process.spawn/4` with option `:link` or call `Process.link/1` with `PID` after spawned.
 
 For unlink process we can use `Process.unlink/1`.
 
@@ -199,9 +193,9 @@ For get info about link of process we can use `Process.info/2` with option `:lin
 
 You can have a chain of processes like process A link process B and process B link to process. Now we have a group linked processes A, B & C. If A is die then B & C will die.
 
-The main idea in here, you can fail fast or shutdown all processes asap & easy exit like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy exit.
+The main idea in here, you can fail fast or shutdown all processes fast & easy like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy shutdown all of them.
 
-Note: If linked process is exit normally (:normal, :noproc) other process will not be killed.
+*Note: If linked process is exit normally (:normal, :noproc) other process will not be killed.*
 
 ```elixir
 defmodule LetsCrash do
@@ -314,7 +308,7 @@ Let's check processes again.
 
 ## Monitor a process
 
-In another hand, you want to know how a process died or want to restart a process if it's died (AND don't want process die follow other process).
+In another hand, you want to know when/how a process died or want to restart a process if it's died.
 
 You can use monitor process feature for above reason.
 
