@@ -1,4 +1,4 @@
-
+# load code in remote load by Elixir's way
 content = quote do
   defmodule DSpawn do
     def start() do
@@ -80,3 +80,8 @@ end
 
 # get pid from string.
 :erlang.list_to_pid(String.to_charlist("<0.165.0>"))
+
+# make module in runtime
+module = Module.concat(MyProject, MyModule)
+contents = Code.string_to_quoted!("def base(), do: IO.puts(\"test\")")
+Module.create(module, contents, Macro.Env.location(__ENV__))

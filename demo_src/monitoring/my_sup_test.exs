@@ -1,3 +1,4 @@
+# module for child process
 defmodule SimpleLoop do
   def loop() do
     receive do
@@ -21,3 +22,31 @@ defmodule SimpleLoop do
     loop()
   end
 end
+
+# start supervisor
+MySup.start(
+  :my_sup,
+  [
+    {SimpleLoop, :init, [:child_1]},
+    {SimpleLoop, :init, [:child_2]}
+  ],
+  %{strategy: :group, restart: :failed}
+)
+
+
+# test child is alive or not
+
+Process.alive?(Process.whereis(:child_1))
+
+send(:child_1, {self(), :ping})
+
+receive do
+  msg -> IO.puts("#{inspect(msg)}")
+after
+  1000 ->
+    IO.puts("no :pong return")
+end
+
+
+# make a crash in child process
+send(:child_1, :raise)

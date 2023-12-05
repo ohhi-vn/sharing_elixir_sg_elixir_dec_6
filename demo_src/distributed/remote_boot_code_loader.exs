@@ -8,7 +8,7 @@
 #  iex --sname worker --cookie abc123 --erl "-hosts 127.0.0.1 -id worker -loader inet"
 
 # run on server
-:rpc.call(:'worker', :code, :add_paths, [:code.get_path])
+:rpc.call(:worker, :code, :add_paths, [:code.get_path])
 
 # check by
 Code.ensure_loaded(MyModule)

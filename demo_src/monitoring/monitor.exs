@@ -7,6 +7,10 @@ defmodule MonitorProcess do
 
       :shutdown ->
         IO.puts("#{inspect(self())}, I'm shutting down...")
+        exit(:normal)
+
+      :exit_noproc ->
+        IO.puts("#{inspect(self())}, No more func for me.")
 
       {from, :ping} ->
         IO.puts("#{inspect(self())}, I got a ping msg from #{inspect(from)}")

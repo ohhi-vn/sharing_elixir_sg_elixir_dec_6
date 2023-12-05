@@ -44,11 +44,11 @@ init proess like a state machine:
 ```mermaid
 stateDiagram-v2
   [*] --> init
-  init --> state_1
-  state_1 --> state_2
-  state_2 --> state_3
-  state_3 --> state_1
-  state_1 --> finish
+  init --> s1
+  s1 --> s2
+  s2 --> s3
+  s3 --> s1
+  s1 --> finish
   finish --> [*]
 ```
 
@@ -145,13 +145,13 @@ Process.sleep(100)
 
 How to communicate between processes? (or how to a process get data from other process)
 
-Don't like other languages Elixir cannot use global variables (but ETS table). A process in Elixir only can send or receive a message to/from other process.
+Don't like other languages Elixir cannot use global variables (but ETS table & `:persistent_term`). A process in Elixir only can send or receive a message to/from other process.
 
 Use `send/2` function for sending a msg to other process.
 
 Use `receive do` for waiting (or get from message box if process has a message) a message from other processes
 
-Message are stored in Mailbox of process.
+Message are stored in Mailbox of process (need to care this because it can raise OOM errror & kill VM).
 
 <!-- livebook:{"break_markdown":true} -->
 
@@ -181,7 +181,7 @@ We can manually controll process by link/monitor feature in Elixir.
 
 ## Link between proceses
 
-Build on top of Erlang, Elixir support create a link between 2 processes.
+Elixir(Build on top of Erlang) support create a link between 2 processes.
 
 But what is the link? That a solid connection between two processes. If a process is die then another process will die.
 
@@ -207,6 +207,10 @@ defmodule LetsCrash do
 
       :shutdown ->
         IO.puts("#{inspect(self())}, I'm shutting down...")
+        exit(:normal)
+
+      :exit_noproc ->
+        IO.puts("#{inspect(self())}, No more function for me.")
 
       {from, :ping} ->
         IO.puts("#{inspect(self())}, I got a ping msg from #{inspect(from)}")
@@ -306,6 +310,10 @@ send(:parent, :crash)
 
 Let's check processes again.
 
+```elixir
+send(:son, :exit_noproc)
+```
+
 ## Monitor a process
 
 In another hand, you want to know when/how a process died or want to restart a process if it's died.
@@ -336,6 +344,10 @@ defmodule MonitorProcess do
 
       :shutdown ->
         IO.puts("#{inspect(self())}, I'm shutting down...")
+        exit(:normal)
+
+      :exit_noproc ->
+        IO.puts("#{inspect(self())}, No more func for me.")
 
       {from, :ping} ->
         IO.puts("#{inspect(self())}, I got a ping msg from #{inspect(from)}")
@@ -470,27 +482,30 @@ Function for example:
 fun = fn me ->
   receive do
     :stop ->
-      IO.puts("I'm out, pid: #{inspect(self())}")
+      IO.puts("#{inspect(self())}, I'm out")
 
     {:trap, value} ->
-      IO.puts("trap: #{inspect(value)}, pid: #{inspect(self())}")
+      IO.puts("#{inspect(self())}, trap: #{inspect(value)}")
       Process.flag(:trap_exit, value)
       me.(me)
 
     :raise ->
-      raise "raise by #{inspect(self())}"
+      raise "#{inspect(self())}, raise a RuntimeError :D"
 
     {:spawn_link, name} ->
-      spawn_link(fn ->
-        Process.register(self(), name)
-        IO.puts("spawn a new process pid: #{inspect(self())}")
-        me.(me)
-      end)
+      pid =
+        spawn_link(fn ->
+          Process.register(self(), name)
+          IO.puts("#{inspect(self())}, I'm a new process")
+          me.(me)
+        end)
+
+      IO.puts("#{inspect(self())}, I'm spawn a new child: #{inspect(pid)}")
 
       me.(me)
 
     msg ->
-      IO.puts("unknown msg: #{inspect(msg)}, pid: #{inspect(self())}")
+      IO.puts(" #{inspect(self())}, unknown msg: #{inspect(msg)}")
       me.(me)
   end
 end
@@ -534,8 +549,8 @@ Idea the supervisor is a process with `:trap_exit` was set to `true` for receivi
 sequenceDiagram
     Sup->>Child: spawn_link
     Child-->>Sup: msg Die!
-    Sup->>Child: spawn_link
-    Sup->>Child: Terminate
+    Sup->>Child: re spawn_link
+    Sup->>Child: Terminate/Kill
 ```
 
 <!-- livebook:{"break_markdown":true} -->
@@ -680,6 +695,7 @@ defmodule SimpleLoop do
         raise "raised by #{inspect(self())}"
 
       {from, :ping} ->
+        IO.puts("#{inspect(self())}, received a ping msg from #{inspect(from)}")
         send(from, :pong)
         loop()
 
