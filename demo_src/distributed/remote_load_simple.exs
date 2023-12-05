@@ -55,25 +55,23 @@ content = quote do
         end)
     end
 
-    def remote_load_me() do
-      {mod, bin, file} = :code.get_object_code(:"Elixir.DSpawn")
-      for node <- Node.list do
-        remote_load_mod(node, {mod, bin, file})
-      end
-    end
-
-    def remote_load_mod(node, {mod, bin, file}) do
-      :rpc.call(node, :code, :load_binary, [mod, file, bin])
-    end
-
     def print_me() do
       IO.puts "#{inspect Node.self()}, #{inspect self()}, #{inspect __MODULE__}"
     end
   end
 end
 
+# Start n1 & n2 node by cmd:
+#iex --sname n1@localhost --cookie abc
+#iex --sname n2@localhost --cookie abc
+
+Node.connect(:"n2@localhost")
+
 # compile & load for local node
 [{ DSpawn, object_code }] = Code.compile_quoted content
+
+# check code is loaded or not
+Code.loaded?(DSpawn)
 
 # compile & load for remote node
 :rpc.call(:n2@localhost, Code, :compile_quoted, [content])
@@ -81,7 +79,5 @@ end
 # get pid from string.
 :erlang.list_to_pid(String.to_charlist("<0.165.0>"))
 
-# make module in runtime
-module = Module.concat(MyProject, MyModule)
-contents = Code.string_to_quoted!("def base(), do: IO.puts(\"test\")")
-Module.create(module, contents, Macro.Env.location(__ENV__))
+{_module, binary, filename} = :code.get_object_code(module)
+:rpc.call(Node, code, load_binary, [Module, Filename, Binary])

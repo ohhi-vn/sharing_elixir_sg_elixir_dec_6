@@ -28,13 +28,29 @@ Another wall team need to break through (especially small company).
 We can clone a local module to a remote node by:
 
 * Erlang functions `:rpc.call`, `:rpc.multicall` with `:code.load_binary/3` function.
-* Elixir function ` Code.compile_quoted`.
-* Erlang `:erl_boot_server` module for diskless node.
+* Elixir function push code in `quote do` block then call ` Code.compile_quoted` in remote node. Or use Code.eval_* functions for similar purpose.
+* Erlang `:erl_boot_server` & `:erl_prim_loader` module for diskless node.
+
+Erlang's way:
 
 ```elixir
 {mod, bin, file} = code:get_object_code(Mod),
 {_Replies, _} = rpc:multicall(Nodes, code, load_binary,
                               [mod, file, bin])
+```
+
+Elixir's way:
+
+```elixir
+content = quote do
+  defmodule DynamicMod do
+    def print_me() do
+      IO.puts "My PID: #{inspect self()}"
+    end
+  end
+
+# compile & load for remote node
+:rpc.call(:n2@localhost, Code, :compile_quoted, [content])
 ```
 
 The idea in here, you can start an empty node then push code later. Don't need to care about build or wrap an app.
