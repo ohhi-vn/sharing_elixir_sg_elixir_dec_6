@@ -4,6 +4,8 @@
 
 Process just is an isolated island(run a flow code with a owner heap) in Elixir world. Process run & managed by owner scheduler on ErlVM. It's like green thread/lightweight thread in other languages.
 
+In Elixir to start a process we use `spawn*` (or declare process in a Supervisor).
+
 ## some common call fow for process
 
 start process do a job then exit:
@@ -141,17 +143,17 @@ spawn(fn -> HelloProcess.select_state(4) end)
 Process.sleep(100)
 ```
 
-## Communite between processes
+## Communicate between processes
 
 How to communicate between processes? (or how to a process get data from other process)
 
-Don't like other languages Elixir cannot use global variables (but ETS table & `:persistent_term`). A process in Elixir only can send or receive a message to/from other process.
+Don't like other languages, Elixir cannot use global variables (but excepts ETS table & `:persistent_term`). A process in Elixir only can send or receive a message to/from other process.
 
-Use `send/2` function for sending a msg to other process.
+Use `send/2` function for sending a msg(data) to other process.
 
-Use `receive do` for waiting (or get from message box if process has a message) a message from other processes
+Use `receive do` for waiting (or get from mailbox if process has a message) a message from other processes
 
-Message are stored in Mailbox of process (need to care this because it can raise OOM errror & kill VM).
+Message are stored in mailbox of process (need to care this because it can raise OOM errror & kill VM).
 
 <!-- livebook:{"break_markdown":true} -->
 
@@ -181,6 +183,13 @@ We can manually controll process by link/monitor feature in Elixir.
 
 ## Link between proceses
 
+```mermaid
+flowchart LR
+  Process_A <-- link --> Process_B
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
 Elixir(Build on top of Erlang) support create a link between 2 processes.
 
 But what is the link? That a solid connection between two processes. If a process is die then another process will die.
@@ -191,7 +200,7 @@ For unlink process we can use `Process.unlink/1`.
 
 For get info about link of process we can use `Process.info/2` with option `:links`.
 
-You can have a chain of processes like process A link process B and process B link to process. Now we have a group linked processes A, B & C. If A is die then B & C will die.
+You can have a chain of processes like process A link process B and process B link to process C. Now we have a group linked processes A, B & C. If A is die then B & C will die.
 
 The main idea in here, you can fail fast or shutdown all processes fast & easy like a domino effect(chain reaction). Think you have thousands processes then want to fail together or easy shutdown all of them.
 
@@ -311,10 +320,17 @@ send(:parent, :crash)
 Let's check processes again.
 
 ```elixir
-send(:son, :exit_noproc)
+send(:son, :crash)
 ```
 
 ## Monitor a process
+
+```mermaid
+flowchart LR
+  Process_A -- monitor --> Process_B
+```
+
+<!-- livebook:{"break_markdown":true} -->
 
 In another hand, you want to know when/how a process died or want to restart a process if it's died.
 
@@ -323,6 +339,8 @@ You can use monitor process feature for above reason.
 When a process A monitor process B, process A will receive a message if a process B is died.
 
 Some function for monitor process: `spawn_monitor/`, `spawn_monitor/3`, `Process.monitor/1`, `Process.spawn/2` & `Process.spawn/4` with option `:monitor`.
+
+When spawn or set monitor a process we will receive a reference for check it later.
 
 For demonitor: `Process.demonitor/2`
 
@@ -462,6 +480,15 @@ send(:son_monitor, :shutdown)
 
 ## Trap process
 
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph TD;
+  Process_A--trap_exit-->Process_B;
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
 What is a trap?
 
 That a way to avoid a linked process die follow other process.
@@ -535,9 +562,19 @@ IO.puts("#{inspect(pid)} is alive? =>  #{inspect(Process.alive?(pid))}")
 
 ## Build a simple supervisor
 
+<!-- Learn more at https://mermaid-js.github.io/mermaid -->
+
+```mermaid
+graph TD;
+  Supervisor-->Process_B;
+  Supervisor-->Process_A;
+```
+
+<!-- livebook:{"break_markdown":true} -->
+
 From link, monitor & trap_exit above we can build a own supervisor.
 
-For simple I make a supervisor by link process and `:trap_exit`.
+For simple I make a supervisor by `spawn_link` for link processes and `:trap_exit`.
 
 Idea the supervisor is a process with `:trap_exit` was set to `true` for receiving exit signal from children. All children will die if supervisor process was die.
 
@@ -548,7 +585,7 @@ Idea the supervisor is a process with `:trap_exit` was set to `true` for receivi
 ```mermaid
 sequenceDiagram
     Sup->>Child: spawn_link
-    Child-->>Sup: msg Die!
+    Child-->>Sup: msg Die (anomaly)!
     Sup->>Child: re spawn_link
     Sup->>Child: Terminate/Kill
 ```
@@ -608,6 +645,8 @@ defmodule MySup do
         # stop all child by kill
 
         send(from, :stop_ok)
+
+        exit(:kill)
 
       # handle child down
       {:EXIT, pid, reason} ->

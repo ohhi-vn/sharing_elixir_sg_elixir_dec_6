@@ -48,6 +48,7 @@ defmodule MySup do
         # stop all child by kill
 
         send(from, :stop_ok)
+        exit(:kill)
 
       # handle child down
       {:EXIT, pid, reason} ->

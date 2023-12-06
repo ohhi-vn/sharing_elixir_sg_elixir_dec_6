@@ -50,3 +50,7 @@ end
 
 # make a crash in child process
 send(:child_1, :raise)
+
+# get pid of child process
+Process.whereis(:child_1)
+Process.whereis(:child_2)

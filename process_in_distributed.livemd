@@ -19,6 +19,16 @@ The most functions from last introduce also have in Node module.
 That mean we can build very flexible system with highly automation.
 Yes, almost we have no border like other languages.
 
+## Node monitoring
+
+We can monitor a remote node almost like monitor process.
+
+We can turn a none distributed node to a distributed node by `Node.start`.
+
+We can monitor a node by `Node.minitor/2`.
+
+For monitor node case, if a node die, other node will received a message `{:nodedown, node_name}`.
+
 ## Push code to remote node
 
 Docker/K8s now is disturbing things for dev.
@@ -34,10 +44,14 @@ We can clone a local module to a remote node by:
 Erlang's way:
 
 ```elixir
-{mod, bin, file} = code:get_object_code(Mod),
-{_Replies, _} = rpc:multicall(Nodes, code, load_binary,
+{mod, bin, file} = :code.get_object_code(Mod),
+{_Replies, _} = :rpc.multicall(nodes, code, load_binary,
                               [mod, file, bin])
 ```
+
+Or we can compile Erlang code in runtime by `:erl_scan`, `:erl_parse` & `:erl_eval` module.
+
+<!-- livebook:{"break_markdown":true} -->
 
 Elixir's way:
 
@@ -55,15 +69,7 @@ content = quote do
 
 The idea in here, you can start an empty node then push code later. Don't need to care about build or wrap an app.
 
-## Node monitoring
-
-We can monitor a remote node almost like monitor process.
-
-We can turn a none distributed node to a distributed node by `Node.start`.
-
-We can monitor a node by `Node.minitor/2`.
-
-For monitor node case, if a node die, other node will received a message `{:nodedown, node_name}`.
+## Demo load code to remote node in VS Code
 
 ## OTP way to deploy (& fault tolerance)
 
@@ -173,7 +179,7 @@ Currently, we have two famous algorithms that are Paxos(old cluster uses this. E
 
 <!-- livebook:{"break_markdown":true} -->
 
-I hope OTP app support this in the future.
+I hope OTP framework support this in the future.
 
 ## Idea for a fast & automation deployment
 
@@ -190,7 +196,7 @@ K8s & Docker are perfect for static type languages but not for dynamic type lang
 
 The idea in here we can build & deploy distributed system without complexity of other tool like K8s by using advantage of Elixir/Erlang (& dynamic type languages).
 
-Each node is Elixir node and start with minimum code (just code for init state like: connect/join cluster, security) and can auto switch to a node with code we need.
+Each node is Elixir node and start with minimum code (just code for init state like: connect/join cluster, security) and it can auto switch to a worker node with code we need to deploy.
 
 Node uses all hardware resource. Maybe we have some specific hardware for specific task like: cache(memory intensive), db(storage intensive), ML(GPU/AI-accelerator),... but for general nodes we can reuse like K8s.
 
